@@ -8,18 +8,18 @@ import random
 import time
 import sys
 
-
-load_dotenv()
+# タイムゾーンの指定
 tz = timezone('Asia/Tokyo')
 
-
+# 環境変数から、APIキー等を取得
+load_dotenv()
 Consumer_key = os.environ['CONSUMER_API_KEY'] 
 Consumer_secret = os.environ["CONSUMER_API_SECRET_KEY"]
 Bearer_token = os.environ["BEARER_TOKEN"]
 Access_token = os.environ["ACCESS_TOKEN"]
 Access_token_secret = os.environ["ACCESS_TOKEN_SECRET"]
 
-
+# クライアントの作成
 client = tweepy.Client(
   bearer_token = Bearer_token,
 	consumer_key = Consumer_key,
@@ -29,18 +29,11 @@ client = tweepy.Client(
 )
 
 
-count = int(input("ツイート回数を入力してください->"))
-foods = ["ハンバーグ","カレー","アイス","寿司","牛丼","ラーメン","焼肉","パフェ","うどん","スパゲッティ","ピザ","唐揚げ"]
-tweet_contents = []
-i = 0
-
-
+# メッセージ内容を生成するクラスを作成
 class Message():
-  def __init__(self,foods):
-    self.order_num = random.randrange(len(foods))
-    self.randomfood = foods[self.order_num]
-
-
+  def __init__(self):
+    self.want_eat()
+# 投稿する時間によってあいさつの仕方を変えつつ、メッセージを取得
   def greet(self,time):
     if 4 < time.hour < 12:
       self.greet = "おはよう！"
@@ -51,21 +44,32 @@ class Message():
 
     self.message = f"{self.greet}世界。もう{time.hour}時{time.minute}分だね～。{self.randomfood}が食べたいな。"
     return self.message
+  
+  # つぶやく内容を少しひねって、時刻情報以外に食べたいものをランダムに投稿するようにする。
+  def want_eat(self):
+    self.foods = ["ハンバーグ","カレー","アイス","寿司","牛丼","ラーメン","焼肉","パフェ","うどん","スパゲッティ","ピザ","唐揚げ"]
+    self.order_num = random.randrange(len(self.foods))
+    self.randomfood = self.foods[self.order_num]
 
+# ツイート数の決定
+count = int(input("ツイート回数を入力してください->"))
 
+# ツイートを要求分だけ生成
+tweet_contents = []
 for num in range(count):
-  tweet_contents.append(Message(foods))
+  tweet_contents.append(Message())
 
-
-def tweet(content):
+# ツイート内容を投稿する関数
+i = 0
+def tweet(contents):
   global i
-  curent_time = datetime.datetime.now(tz)
-  post = content[i].greet(curent_time)
+  current_time = datetime.datetime.now(tz)
+  post = contents[i].greet(current_time)
   response = client.create_tweet(text=post)
   print(response)
   i += 1
 
-
+# ツイートの実行を予約
 schedule.every(1).minutes.at(":00").do(tweet,tweet_contents)
 
 
